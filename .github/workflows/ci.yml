@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ '*' ]
+  workflow_dispatch: { }
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-linux-gnu
+          - os: ubuntu-24.04-arm
+            target: aarch64-linux-gnu
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v4
+        with:
+          path: .zig-cache
+          key: zig-cache-${{ runner.target }}
+      - uses: https://codeberg.org/mlugg/setup-zig@v2
+      - run: zig build -Dtarget=${{ runner.target }}
+      - run: zig build test -Dtarget=${{ runner.target }}
