@@ -31,13 +31,7 @@ jobs:
       - run: zig build test --summary new -Dtarget=${{ matrix.target }}
 
   lint:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-24.04
-          - os: ubuntu-24.04-arm
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
       - run: curl -fsSL https://raw.githubusercontent.com/DonIsaac/zlint/refs/heads/main/tasks/install.sh | bash
