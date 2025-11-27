@@ -29,3 +29,16 @@ jobs:
           cache-key: ${{ matrix.target }}
       - run: zig build --summary new -Dtarget=${{ matrix.target }}
       - run: zig build test --summary new -Dtarget=${{ matrix.target }}
+
+  lint:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+          - os: ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - run: curl -fsSL https://raw.githubusercontent.com/DonIsaac/zlint/refs/heads/main/tasks/install.sh | bash
+      - run: zlint -f github --deny-warnings
