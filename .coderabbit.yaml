@@ -1,0 +1,12 @@
+reviews:
+  profile: chill
+  sequence_diagrams: false
+  poem: false
+  high_level_summary: false
+  auto_review:
+    drafts: true
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
