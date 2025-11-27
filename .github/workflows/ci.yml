@@ -28,6 +28,6 @@ jobs:
         with:
           path: .zig-cache
           key: zig-cache-${{ runner.target }}
-      - uses: https://codeberg.org/mlugg/setup-zig@v2
+      - uses: mlugg/setup-zig@v2
       - run: zig build -Dtarget=${{ runner.target }}
       - run: zig build test -Dtarget=${{ runner.target }}
