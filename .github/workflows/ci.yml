@@ -27,5 +27,5 @@ jobs:
       - uses: mlugg/setup-zig@v2
         with:
           cache-key: ${{ matrix.target }}
-      - run: zig build -Dtarget=${{ matrix.target }}
+      - run: zig build --summary new -Dtarget=${{ matrix.target }}
       - run: zig build test --summary new -Dtarget=${{ matrix.target }}
