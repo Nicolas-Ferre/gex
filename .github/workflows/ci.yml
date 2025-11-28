@@ -33,7 +33,7 @@ jobs:
   lint:
     runs-on: ubuntu-24.04
     steps:
-      - run: apt-get install moreutils
+      - run: sudo apt-get install moreutils
       - uses: actions/checkout@v6
       - run: curl -fsSL https://raw.githubusercontent.com/DonIsaac/zlint/refs/tags/v0.7.9/tasks/install.sh | bash
       - run: zlint -f github --deny-warnings
