@@ -1,58 +1,82 @@
 const std = @import("std");
+const zlinter = @import("zlinter");
+
 const Build = std.Build;
+const Step = Build.Step;
+const Import = Build.Module.Import;
 const Target = Build.ResolvedTarget;
 const Optimize = std.builtin.OptimizeMode;
-const CompileStep = Build.Step.Compile;
-const Import = Build.Module.Import;
 
-const APP_NAME = "gex";
+const app_name = "gex";
+const disabled_lint_rules = [_]zlinter.BuiltinLintRule{.require_doc_comment};
 
-pub fn build(b: *Build) !void {
+pub fn build(b: *Build) anyerror!void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const compute_step = try add_compile_step(b, target, optimize);
-    try add_install_step(b, compute_step, target, optimize);
-    add_run_step(b, compute_step);
-    add_test_step(b, target, optimize);
+    const compile_step = addCompileStep(b, target, optimize);
+    const install_step = try addInstallStep(b, compile_step, target, optimize);
+    const run_step = addRunStep(b, compile_step);
+    const test_step = addTestStep(b, target, optimize);
+    const lint_step = addLintStep(b);
+    b.getInstallStep().dependOn(&install_step.step);
+    b.step("run", "Run the application").dependOn(&run_step.step);
+    b.step("test", "Run tests").dependOn(&test_step.step);
+    b.step("lint", "Lint source code.").dependOn(lint_step);
 }
 
-fn add_compile_step(b: *Build, target: Target, optimize: Optimize) !*CompileStep {
-    const step = b.addExecutable(.{
-        .name = APP_NAME,
+fn addCompileStep(b: *Build, target: Target, optimize: Optimize) *Step.Compile {
+    return b.addExecutable(.{
+        .name = app_name,
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,
             .optimize = optimize,
-            .imports = &.{sdl3_import(b, target, optimize)},
+            .imports = &.{sdl3Import(b, target, optimize)},
         }),
     });
-    return step;
 }
 
-fn add_install_step(b: *Build, compute_step: *CompileStep, target: Target, optimize: Optimize) !void {
-    const targetName = try target.result.linuxTriple(b.allocator);
-    const path = try std.fs.path.join(b.allocator, &.{ @tagName(optimize), targetName });
-    const step = b.addInstallArtifact(compute_step, .{ .dest_dir = .{ .override = .{ .custom = path } } });
-    b.getInstallStep().dependOn(&step.step);
+fn addInstallStep(
+    b: *Build,
+    compile_step: *Step.Compile,
+    target: Target,
+    optimize: Optimize,
+) anyerror!*Step.InstallArtifact {
+    const target_name = try target.result.linuxTriple(b.allocator);
+    const path = try std.fs.path.join(b.allocator, &.{ @tagName(optimize), target_name });
+    return b.addInstallArtifact(compile_step, .{
+        .dest_dir = .{ .override = .{ .custom = path } },
+    });
 }
 
-fn add_run_step(b: *Build, compute_step: *CompileStep) void {
-    b.step("run", "Run the application").dependOn(&b.addRunArtifact(compute_step).step);
+fn addRunStep(b: *Build, compile_step: *Step.Compile) *Step.Run {
+    return b.addRunArtifact(compile_step);
 }
 
-fn add_test_step(b: *Build, target: Target, optimize: Optimize) void {
+fn addTestStep(b: *Build, target: Target, optimize: Optimize) *Step.Run {
     const tests = b.addTest(.{
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,
             .optimize = optimize,
-            .imports = &.{sdl3_import(b, target, optimize)},
+            .imports = &.{sdl3Import(b, target, optimize)},
         }),
     });
-    b.step("test", "Run tests").dependOn(&b.addRunArtifact(tests).step);
+    return b.addRunArtifact(tests);
 }
 
-fn sdl3_import(b: *Build, target: Target, optimize: Optimize) Import {
+fn addLintStep(b: *Build) *Step {
+    var builder = zlinter.builder(b, .{});
+    inline for (@typeInfo(zlinter.BuiltinLintRule).@"enum".fields) |field| {
+        const rule: zlinter.BuiltinLintRule = @enumFromInt(field.value);
+        if (std.mem.indexOfScalar(zlinter.BuiltinLintRule, &disabled_lint_rules, rule) == null) {
+            builder.addRule(.{ .builtin = rule }, .{});
+        }
+    }
+    return builder.build();
+}
+
+fn sdl3Import(b: *Build, target: Target, optimize: Optimize) Import {
     const sdl3_dep = b.dependency("sdl3", .{
         .target = target,
         .optimize = optimize,

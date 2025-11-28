@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub fn main() !void {
+pub fn main() void {
     std.debug.print("Double of 2 is {}\n", .{double(2)});
 }
 
