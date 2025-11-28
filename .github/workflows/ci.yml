@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-      - uses: mlugg/setup-zig@8d6198c65fb0feaa111df26e6b467fea8345e46f # v2
+      - uses: mlugg/setup-zig@274ad334e3acfaf9c831403184a723f416c218f2 # v2
         with:
           cache-key: test-${{ matrix.target }}
       - run: zig build --summary new -Dtarget=${{ matrix.target }}
@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v6
       - run: curl -fsSL https://raw.githubusercontent.com/DonIsaac/zlint/refs/heads/main/tasks/install.sh | bash
       - run: zlint -f github --deny-warnings
-      - uses: mlugg/setup-zig@8d6198c65fb0feaa111df26e6b467fea8345e46f # v2
+      - uses: mlugg/setup-zig@274ad334e3acfaf9c831403184a723f416c218f2 # v2
         with:
           cache-key: lint-${{ matrix.target }}
       - run: zig build lint
