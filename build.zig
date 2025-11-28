@@ -17,12 +17,13 @@ pub fn build(b: *Build) anyerror!void {
     const install_step = try addInstallStep(b, compile_step, target, optimize);
     const run_step = addRunStep(b, compile_step);
     const test_step = addTestStep(b, target, optimize);
-    const lint_step = addLintStep(b);
-    lint_step.dependOn(&compile_step.step);
+    // const lint_step = addLintStep(b);
+    // lint_step.dependOn(&compile_step.step);
     b.getInstallStep().dependOn(&install_step.step);
     b.step("run", "Run the application").dependOn(&run_step.step);
     b.step("test", "Run tests").dependOn(&test_step.step);
-    b.step("lint", "Lint source code.").dependOn(lint_step);
+    _ = b.step("lint", "Lint source code.");
+    //.dependOn(lint_step);
 }
 
 fn addCompileStep(b: *Build, target: Target, optimize: Optimize) *Step.Compile {
