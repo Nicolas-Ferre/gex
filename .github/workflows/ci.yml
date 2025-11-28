@@ -33,7 +33,6 @@ jobs:
   lint:
     runs-on: ubuntu-24.04
     steps:
-      - run: sudo apt-get install moreutils
       - uses: actions/checkout@v6
       - run: curl -fsSL https://raw.githubusercontent.com/DonIsaac/zlint/refs/tags/v0.7.9/tasks/install.sh | bash
       - run: zlint -f github --deny-warnings
@@ -47,4 +46,5 @@ jobs:
           find ./ -type f -name "*.zig" ! -path "./.zig-cache/*" -exec awk 'length($0) > 100 { printf "%s:%d: %s\n", FILENAME, NR, $0; err = 1 } END { exit err }' {} +
       - name: Detect line endings different than '\n'
         run: find ./ -type f -name "*.zig" ! -path "./.zig-cache/*" -exec grep -U -l $'\r' {} + | tee /dev/stderr | grep -q . && exit 1 || exit 0
+      - run: sudo apt-get install moreutils
       - run: isutf8 **/*
