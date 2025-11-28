@@ -2,10 +2,10 @@ const std = @import("std");
 const zlinter = @import("zlinter");
 
 const Build = std.Build;
+const Step = Build.Step;
+const Import = Build.Module.Import;
 const Target = Build.ResolvedTarget;
 const Optimize = std.builtin.OptimizeMode;
-const CompileStep = Build.Step.Compile;
-const Import = Build.Module.Import;
 
 const app_name = "gex";
 const disabled_lint_rules = [_]zlinter.BuiltinLintRule{.require_doc_comment};
@@ -14,14 +14,19 @@ pub fn build(b: *Build) anyerror!void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const compile_step = addCompileStep(b, target, optimize);
-    try addInstallStep(b, compile_step, target, optimize);
-    addRunStep(b, compile_step);
-    addTestStep(b, target, optimize);
-    addLintStep(b);
+    const install_step = try addInstallStep(b, compile_step, target, optimize);
+    const run_step = addRunStep(b, compile_step);
+    const test_step = addTestStep(b, target, optimize);
+    const lint_step = addLintStep(b);
+    lint_step.dependOn(&compile_step.step);
+    b.getInstallStep().dependOn(&install_step.step);
+    b.step("run", "Run the application").dependOn(&run_step.step);
+    b.step("test", "Run tests").dependOn(&test_step.step);
+    b.step("lint", "Lint source code.").dependOn(lint_step);
 }
 
-fn addCompileStep(b: *Build, target: Target, optimize: Optimize) *CompileStep {
-    const step = b.addExecutable(.{
+fn addCompileStep(b: *Build, target: Target, optimize: Optimize) *Step.Compile {
+    return b.addExecutable(.{
         .name = app_name,
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
@@ -30,28 +35,26 @@ fn addCompileStep(b: *Build, target: Target, optimize: Optimize) *CompileStep {
             .imports = &.{sd3Import(b, target, optimize)},
         }),
     });
-    return step;
 }
 
 fn addInstallStep(
     b: *Build,
-    compile_step: *CompileStep,
+    compile_step: *Step.Compile,
     target: Target,
     optimize: Optimize,
-) anyerror!void {
+) anyerror!*Step.InstallArtifact {
     const target_name = try target.result.linuxTriple(b.allocator);
     const path = try std.fs.path.join(b.allocator, &.{ @tagName(optimize), target_name });
-    const step = b.addInstallArtifact(compile_step, .{
+    return b.addInstallArtifact(compile_step, .{
         .dest_dir = .{ .override = .{ .custom = path } },
     });
-    b.getInstallStep().dependOn(&step.step);
 }
 
-fn addRunStep(b: *Build, compile_step: *CompileStep) void {
-    b.step("run", "Run the application").dependOn(&b.addRunArtifact(compile_step).step);
+fn addRunStep(b: *Build, compile_step: *Step.Compile) *Step.Run {
+    return b.addRunArtifact(compile_step);
 }
 
-fn addTestStep(b: *Build, target: Target, optimize: Optimize) void {
+fn addTestStep(b: *Build, target: Target, optimize: Optimize) *Step.Run {
     const tests = b.addTest(.{
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
@@ -60,10 +63,10 @@ fn addTestStep(b: *Build, target: Target, optimize: Optimize) void {
             .imports = &.{sd3Import(b, target, optimize)},
         }),
     });
-    b.step("test", "Run tests").dependOn(&b.addRunArtifact(tests).step);
+    return b.addRunArtifact(tests);
 }
 
-fn addLintStep(b: *Build) void {
+fn addLintStep(b: *Build) *Step {
     var builder = zlinter.builder(b, .{});
     inline for (@typeInfo(zlinter.BuiltinLintRule).@"enum".fields) |field| {
         const rule: zlinter.BuiltinLintRule = @enumFromInt(field.value);
@@ -71,7 +74,7 @@ fn addLintStep(b: *Build) void {
             builder.addRule(.{ .builtin = rule }, .{});
         }
     }
-    b.step("lint", "Lint source code.").dependOn(builder.build());
+    return builder.build();
 }
 
 fn sd3Import(b: *Build, target: Target, optimize: Optimize) Import {
