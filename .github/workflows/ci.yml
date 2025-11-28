@@ -34,10 +34,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/checkout@v6
-      - run: curl -fsSL https://raw.githubusercontent.com/DonIsaac/zlint/refs/heads/main/tasks/install.sh | bash
+      - run: curl -fsSL https://raw.githubusercontent.com/DonIsaac/zlint/refs/tags/v0.7.9/tasks/install.sh | bash
       - run: zlint -f github --deny-warnings
       - uses: mlugg/setup-zig@v2.0.5
         with:
-          cache-key: lint-${{ matrix.target }}
+          cache-key: lint
       - run: zig build lint

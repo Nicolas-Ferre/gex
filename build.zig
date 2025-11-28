@@ -31,7 +31,7 @@ fn addCompileStep(b: *Build, target: Target, optimize: Optimize) *Step.Compile {
             .root_source_file = b.path("src/main.zig"),
             .target = target,
             .optimize = optimize,
-            .imports = &.{sd3Import(b, target, optimize)},
+            .imports = &.{sdl3Import(b, target, optimize)},
         }),
     });
 }
@@ -59,7 +59,7 @@ fn addTestStep(b: *Build, target: Target, optimize: Optimize) *Step.Run {
             .root_source_file = b.path("src/main.zig"),
             .target = target,
             .optimize = optimize,
-            .imports = &.{sd3Import(b, target, optimize)},
+            .imports = &.{sdl3Import(b, target, optimize)},
         }),
     });
     return b.addRunArtifact(tests);
@@ -76,7 +76,7 @@ fn addLintStep(b: *Build) *Step {
     return builder.build();
 }
 
-fn sd3Import(b: *Build, target: Target, optimize: Optimize) Import {
+fn sdl3Import(b: *Build, target: Target, optimize: Optimize) Import {
     const sdl3_dep = b.dependency("sdl3", .{
         .target = target,
         .optimize = optimize,
