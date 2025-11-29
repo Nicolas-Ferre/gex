@@ -37,7 +37,7 @@ jobs:
       - uses: mlugg/setup-zig@v2.0.5
         with:
           cache-key: coverage
-      - run: sudo apt-get install kcov
+      - run: sudo apt-get update && sudo apt-get install kcov
       - run: zig build coverage --summary new --verbose
       - uses: codecov/codecov-action@v5
         with:
