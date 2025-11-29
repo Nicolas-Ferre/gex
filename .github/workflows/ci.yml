@@ -39,7 +39,7 @@ jobs:
       - uses: mlugg/setup-zig@v2.0.5
         with:
           cache-key: lint
-      - run: zig build lint
+      - run: zig build lint -- --max-warnings 0
       - run: zig fmt ./ --check
       - name: Detect lines with more than 100 characters
         run: |
