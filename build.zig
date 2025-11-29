@@ -16,11 +16,13 @@ pub fn build(b: *Build) anyerror!void {
     const compile_step = addCompileStep(b, target, optimize);
     const install_step = try addInstallStep(b, compile_step, target, optimize);
     const run_step = addRunStep(b, compile_step);
-    const test_step = addTestStep(b, target, optimize);
+    const test_step = addTestStep(b, target, optimize, false);
+    const coverage_step = addTestStep(b, target, optimize, true);
     const lint_step = addLintStep(b);
     b.getInstallStep().dependOn(&install_step.step);
     b.step("run", "Run the application").dependOn(&run_step.step);
     b.step("test", "Run tests").dependOn(&test_step.step);
+    b.step("coverage", "Run code coverage").dependOn(&coverage_step.step);
     b.step("lint", "Lint source code.").dependOn(lint_step);
 }
 
@@ -32,6 +34,7 @@ fn addCompileStep(b: *Build, target: Target, optimize: Optimize) *Step.Compile {
             .target = target,
             .optimize = optimize,
             .imports = &.{sdl3Import(b, target, optimize)},
+            .strip = false,
         }),
     });
 }
@@ -53,7 +56,7 @@ fn addRunStep(b: *Build, compile_step: *Step.Compile) *Step.Run {
     return b.addRunArtifact(compile_step);
 }
 
-fn addTestStep(b: *Build, target: Target, optimize: Optimize) *Step.Run {
+fn addTestStep(b: *Build, target: Target, optimize: Optimize, coverage: bool) *Step.Run {
     const tests = b.addTest(.{
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
@@ -61,7 +64,17 @@ fn addTestStep(b: *Build, target: Target, optimize: Optimize) *Step.Run {
             .optimize = optimize,
             .imports = &.{sdl3Import(b, target, optimize)},
         }),
+        .use_llvm = true,
     });
+    if (coverage) {
+        tests.setExecCmd(&[_]?[]const u8{
+            "kcov",
+            "--exclude-pattern=/.local/share/zig/,/include/",
+            "--clean",
+            "kcov-out",
+            null,
+        });
+    }
     return b.addRunArtifact(tests);
 }
 
