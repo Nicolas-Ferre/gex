@@ -68,6 +68,9 @@ fn addTestStep(b: *Build, target: Target, optimize: Optimize, mode: TestMode) *S
         tests.setExecCmd(&[_]?[]const u8{
             "valgrind",
             "--track-origins=yes",
+            "--leak-check=full",
+            "--show-leak-kinds=all",
+            "--errors-for-leak-kinds=all",
             "--error-exitcode=1",
             null,
         });
