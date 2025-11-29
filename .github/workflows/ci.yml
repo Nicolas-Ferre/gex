@@ -27,8 +27,8 @@ jobs:
       - uses: mlugg/setup-zig@v2.0.5
         with:
           cache-key: test-${{ matrix.target }}
-      - run: zig build --summary new -Dtarget=${{ matrix.target }}
-      - run: zig build test --summary new -Dtarget=${{ matrix.target }}
+      - run: zig build --summary new -Dtarget=${{ matrix.target }} --verbose
+      - run: zig build test --summary new -Dtarget=${{ matrix.target }} --verbose
 
   coverage:
     runs-on: ubuntu-24.04
@@ -37,7 +37,7 @@ jobs:
       - uses: mlugg/setup-zig@v2.0.5
         with:
           cache-key: coverage
-      - run: zig build coverage --summary new
+      - run: zig build coverage --summary new --verbose
       - uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
