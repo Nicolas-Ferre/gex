@@ -16,12 +16,14 @@ pub fn build(b: *Build) anyerror!void {
     const compile_step = addCompileStep(b, target, optimize);
     const install_step = try addInstallStep(b, compile_step, target, optimize);
     const run_step = addRunStep(b, compile_step);
-    const test_step = addTestStep(b, target, optimize);
+    const test_step = addTestStep(b, target, optimize, .normal);
+    const valgrind_step = addTestStep(b, target, optimize, .valgrind);
     const lint_step = addLintStep(b);
     b.getInstallStep().dependOn(&install_step.step);
     b.step("run", "Run the application").dependOn(&run_step.step);
     b.step("test", "Run tests").dependOn(&test_step.step);
-    b.step("lint", "Lint source code.").dependOn(lint_step);
+    b.step("valgrind", "Run valgrind on tests").dependOn(&valgrind_step.step);
+    b.step("lint", "Lint source code").dependOn(lint_step);
 }
 
 fn addCompileStep(b: *Build, target: Target, optimize: Optimize) *Step.Compile {
@@ -53,7 +55,7 @@ fn addRunStep(b: *Build, compile_step: *Step.Compile) *Step.Run {
     return b.addRunArtifact(compile_step);
 }
 
-fn addTestStep(b: *Build, target: Target, optimize: Optimize) *Step.Run {
+fn addTestStep(b: *Build, target: Target, optimize: Optimize, mode: TestMode) *Step.Run {
     const tests = b.addTest(.{
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
@@ -62,6 +64,17 @@ fn addTestStep(b: *Build, target: Target, optimize: Optimize) *Step.Run {
             .imports = &.{sdl3Import(b, target, optimize)},
         }),
     });
+    if (mode == .valgrind) {
+        tests.setExecCmd(&[_]?[]const u8{
+            "valgrind",
+            "--track-origins=yes",
+            "--leak-check=full",
+            "--show-leak-kinds=all",
+            "--errors-for-leak-kinds=all",
+            "--error-exitcode=1",
+            null,
+        });
+    }
     return b.addRunArtifact(tests);
 }
 
@@ -86,3 +99,8 @@ fn sdl3Import(b: *Build, target: Target, optimize: Optimize) Import {
     });
     return .{ .name = "sdl3", .module = sdl3_dep.module("sdl3") };
 }
+
+const TestMode = enum {
+    normal,
+    valgrind,
+};

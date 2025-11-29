@@ -48,3 +48,13 @@ jobs:
         run: find ./ -type f -name "*.zig" ! -path "./.zig-cache/*" -exec grep -U -l $'\r' {} + | tee /dev/stderr | grep -q . && exit 1 || exit 0
       - run: sudo apt-get install moreutils
       - run: isutf8 **/*
+
+  valgrind:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: mlugg/setup-zig@v2.0.5
+        with:
+          cache-key: valgrind
+      - run: sudo apt-get install valgrind
+      - run: zig build valgrind
