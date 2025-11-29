@@ -56,4 +56,5 @@ jobs:
       - uses: mlugg/setup-zig@v2.0.5
         with:
           cache-key: valgrind
+      - run: sudo apt-get install valgrind
       - run: zig build valgrind
