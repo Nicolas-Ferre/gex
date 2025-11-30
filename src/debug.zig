@@ -1,5 +1,5 @@
 const std = @import("std");
-const Writer = std.Io.Writer;
+const Writer = std.io.Writer;
 
 pub fn printAsJson(value: anytype) void {
     var gpa = std.heap.DebugAllocator(.{}).init;
