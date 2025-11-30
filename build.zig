@@ -8,7 +8,10 @@ const Target = Build.ResolvedTarget;
 const Optimize = std.builtin.OptimizeMode;
 
 const app_name = "gex";
-const disabled_lint_rules = [_]zlinter.BuiltinLintRule{.require_doc_comment};
+const disabled_lint_rules = [_]zlinter.BuiltinLintRule{
+    .import_ordering,
+    .require_doc_comment,
+};
 
 pub fn build(b: *Build) anyerror!void {
     const target = b.standardTargetOptions(.{});
